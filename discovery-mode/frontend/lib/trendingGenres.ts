@@ -13,7 +13,7 @@ export const GENRE_FILTERS: GenreFilter[] = [
   "Pop",
   "Hip-Hop",
   "Regional",
-];
+] as const;
 
 const GENRE_KEYWORDS: Record<Exclude<GenreFilter, "All">, string[]> = {
   Bollywood: ["bollywood", "film", "movie", "hindi song", "loves", "romantic"],
