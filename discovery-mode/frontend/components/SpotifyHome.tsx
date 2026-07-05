@@ -54,17 +54,19 @@ function SpotifyLogo({ className = "h-8 w-8" }: { className?: string }) {
 function NavIcon({
   label,
   active,
+  blurred,
   children,
 }: {
   label: string;
   active?: boolean;
+  blurred?: boolean;
   children: ReactNode;
 }) {
   return (
     <div
       className={`flex flex-1 flex-col items-center gap-1 py-2 ${
         active ? "text-white" : "text-spotify-muted"
-      }`}
+      } ${blurred ? "blur-[1px] opacity-50" : ""}`}
       aria-label={label}
     >
       {children}
@@ -73,34 +75,9 @@ function NavIcon({
   );
 }
 
-function PlayerBar() {
-  return (
-    <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-[#282828] bg-[#181818]">
-      <div className="h-1 w-full bg-[#4d4d4d]">
-        <div className="h-full w-[30%] bg-spotify-green" />
-      </div>
-      <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-2 sm:px-6">
-        <div className="h-12 w-12 shrink-0 rounded bg-spotify-green shadow-md" />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-white">Dil Se Re</p>
-          <p className="truncate text-xs text-spotify-muted">A.R. Rahman</p>
-        </div>
-        <div
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white"
-          aria-hidden="true"
-        >
-          <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-          </svg>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function SpotifyHome({ onEnterDiscovery }: SpotifyHomeProps) {
   return (
-    <div className="flex min-h-screen flex-col bg-black pb-24">
+    <div className="flex min-h-screen flex-col bg-black">
       <div className="border-b border-[#282828] bg-black px-4 py-1.5 text-center text-xs text-spotify-muted">
         Concept prototype — Discovery Mode features are fully interactive
       </div>
@@ -119,7 +96,7 @@ export default function SpotifyHome({ onEnterDiscovery }: SpotifyHomeProps) {
                 <path d="M12 3l9 8v10a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1V11l9-8z" />
               </svg>
             </NavIcon>
-            <NavIcon label="Search">
+            <NavIcon label="Search" blurred>
               <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
@@ -128,7 +105,7 @@ export default function SpotifyHome({ onEnterDiscovery }: SpotifyHomeProps) {
                 />
               </svg>
             </NavIcon>
-            <NavIcon label="Library">
+            <NavIcon label="Library" blurred>
               <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M6 3h3v18H6V3zm5 4h3v14h-3V7zm5-2h3v16h-3V5z" />
               </svg>
@@ -162,7 +139,7 @@ export default function SpotifyHome({ onEnterDiscovery }: SpotifyHomeProps) {
             {MADE_FOR_YOU.map((playlist) => (
               <div
                 key={playlist.id}
-                className="flex cursor-default items-center gap-4 rounded-md bg-spotify-panel/80 p-3"
+                className="flex cursor-default items-center gap-4 rounded-md bg-spotify-panel/80 p-3 blur-[2px] opacity-40"
               >
                 <div
                   className={`flex h-14 w-14 shrink-0 items-center justify-center rounded bg-gradient-to-br ${playlist.gradient} text-2xl shadow-lg`}
@@ -189,8 +166,6 @@ export default function SpotifyHome({ onEnterDiscovery }: SpotifyHomeProps) {
           </button>
         </section>
       </main>
-
-      <PlayerBar />
     </div>
   );
 }

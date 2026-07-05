@@ -2,18 +2,29 @@
 
 import type { Tab } from "@/lib/types";
 
-const FEATURE_CARDS: { id: Tab; label: string }[] = [
+const FEATURE_CARDS: {
+  id: Tab;
+  emoji: string;
+  name: string;
+  description: string;
+}[] = [
   {
     id: "quick",
-    label: "⚡ Quick Discover — Pick a mood, get 10 songs instantly",
+    emoji: "⚡",
+    name: "Quick Discover",
+    description: "Pick a mood, get 10 songs instantly",
   },
   {
     id: "deep",
-    label: "🎵 Find My Sound — Describe what you want in words",
+    emoji: "🎵",
+    name: "Find My Sound",
+    description: "Describe what you want in words",
   },
   {
     id: "trending",
-    label: "🔥 Trending Now — Songs blowing up on Reels right now",
+    emoji: "🔥",
+    name: "Trending Now",
+    description: "Songs blowing up on Reels right now",
   },
 ];
 
@@ -24,7 +35,7 @@ interface FeatureTourProps {
 
 export default function FeatureTour({ activeTab, onTabChange }: FeatureTourProps) {
   return (
-    <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:gap-3">
+    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:gap-3">
       {FEATURE_CARDS.map((card) => {
         const isActive = activeTab === card.id;
         return (
@@ -32,13 +43,19 @@ export default function FeatureTour({ activeTab, onTabChange }: FeatureTourProps
             key={card.id}
             type="button"
             onClick={() => onTabChange(card.id)}
-            className={`feature-tour-card flex-1 rounded-lg border px-3 py-2.5 text-left text-sm transition-all ${
-              isActive
-                ? "border-spotify-green bg-[#0a2e1a] text-white"
-                : "border-spotify-border bg-spotify-panel text-spotify-muted hover:border-spotify-green/40 hover:text-white"
+            className={`feature-tour-card flex flex-1 cursor-pointer items-center justify-between gap-3 rounded-lg border border-gray-200 border-l-[3px] border-l-[#1DB954] bg-white px-4 py-3.5 text-left shadow-md transition-all hover:bg-[#e8f9ee] ${
+              isActive ? "ring-2 ring-[#1DB954]/40" : ""
             }`}
           >
-            {card.label}
+            <p className="min-w-0 text-base leading-snug text-black">
+              <span className="font-bold">
+                {card.emoji} {card.name}
+              </span>
+              <span className="font-normal text-gray-700"> — {card.description}</span>
+            </p>
+            <span className="shrink-0 text-lg font-semibold text-[#1DB954]" aria-hidden="true">
+              →
+            </span>
           </button>
         );
       })}
