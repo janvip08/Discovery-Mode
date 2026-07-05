@@ -17,7 +17,7 @@ const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   },
   {
     id: "deep",
-    label: "Deep",
+    label: "Find My Sound",
     icon: (
       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path

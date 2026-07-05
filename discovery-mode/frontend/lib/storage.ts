@@ -1,21 +1,8 @@
 import type { Recommendation } from "./api";
-import type { Tab } from "./types";
 
 const MOOD_HISTORY_KEY = "discovery-mode-mood-history";
-const SAVED_SESSIONS_KEY = "discovery-mode-saved-sessions";
+const FAVOURITES_KEY = "discovery-mode-favourites";
 const MAX_MOOD_HISTORY = 3;
-const MAX_SAVED_SESSIONS = 3;
-
-export interface SavedSession {
-  id: string;
-  timestamp: number;
-  mood: string;
-  seedArtist: string;
-  results: Recommendation[];
-  tab?: Tab;
-  deepMood?: string;
-  deepPrompt?: string;
-}
 
 export function getMoodHistory(): string[] {
   if (typeof window === "undefined") return [];
@@ -37,33 +24,31 @@ export function clearMoodHistory(): void {
   localStorage.removeItem(MOOD_HISTORY_KEY);
 }
 
-export function getSavedSessions(): SavedSession[] {
+function favouriteKey(rec: Recommendation): string {
+  return rec.track_id ?? `${rec.artist}::${rec.track}`;
+}
+
+export function getFavourites(): Recommendation[] {
   if (typeof window === "undefined") return [];
   try {
-    return JSON.parse(localStorage.getItem(SAVED_SESSIONS_KEY) || "[]");
+    return JSON.parse(localStorage.getItem(FAVOURITES_KEY) || "[]");
   } catch {
     return [];
   }
 }
 
-export function saveSession(
-  name: string,
-  seedArtist: string,
-  results: Recommendation[],
-  options?: { tab?: Tab; deepMood?: string; deepPrompt?: string }
-): SavedSession[] {
-  const sessions = getSavedSessions();
-  const newSession: SavedSession = {
-    id: `${Date.now()}`,
-    timestamp: Date.now(),
-    mood: name,
-    seedArtist,
-    results,
-    tab: options?.tab,
-    deepMood: options?.deepMood,
-    deepPrompt: options?.deepPrompt,
-  };
-  const updated = [newSession, ...sessions].slice(0, MAX_SAVED_SESSIONS);
-  localStorage.setItem(SAVED_SESSIONS_KEY, JSON.stringify(updated));
+export function isFavourite(rec: Recommendation): boolean {
+  const key = favouriteKey(rec);
+  return getFavourites().some((f) => favouriteKey(f) === key);
+}
+
+export function toggleFavourite(rec: Recommendation): Recommendation[] {
+  const favourites = getFavourites();
+  const key = favouriteKey(rec);
+  const exists = favourites.some((f) => favouriteKey(f) === key);
+  const updated = exists
+    ? favourites.filter((f) => favouriteKey(f) !== key)
+    : [rec, ...favourites];
+  localStorage.setItem(FAVOURITES_KEY, JSON.stringify(updated));
   return updated;
 }

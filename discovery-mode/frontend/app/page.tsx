@@ -12,7 +12,7 @@ import SkeletonLoader from "@/components/SkeletonLoader";
 import QuickEmptyState from "@/components/QuickEmptyState";
 import AnimatedProgressBar from "@/components/AnimatedProgressBar";
 import SessionSummary from "@/components/SessionSummary";
-import SavedSessions from "@/components/SavedSessions";
+import MyFavourites from "@/components/MyFavourites";
 import GenreFilterChips from "@/components/GenreFilterChips";
 import ArtistDeepDivePanel from "@/components/ArtistDeepDivePanel";
 import SpotifyHome from "@/components/SpotifyHome";
@@ -27,10 +27,8 @@ import {
 import {
   addMoodToHistory,
   clearMoodHistory,
+  getFavourites,
   getMoodHistory,
-  getSavedSessions,
-  saveSession,
-  type SavedSession,
 } from "@/lib/storage";
 import { filterTrendingByGenre, type GenreFilter } from "@/lib/trendingGenres";
 import type { Tab } from "@/lib/types";
@@ -46,12 +44,11 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
   const [seedArtist, setSeedArtist] = useState("");
   const [quickResults, setQuickResults] = useState<Recommendation[]>([]);
   const [quickBackup, setQuickBackup] = useState<Recommendation[]>([]);
-  const [savedSessions, setSavedSessions] = useState<SavedSession[]>([]);
+  const [favourites, setFavourites] = useState<Recommendation[]>([]);
 
   const [deepPrompt, setDeepPrompt] = useState("");
   const [deepArtists, setDeepArtists] = useState("");
   const [deepMood, setDeepMood] = useState<string | null>(null);
-  const [adventureLevel, setAdventureLevel] = useState(3);
   const [deepResults, setDeepResults] = useState<Recommendation[]>([]);
   const [showDeepInfo, setShowDeepInfo] = useState(false);
 
@@ -61,10 +58,14 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
 
   const [deepDiveArtist, setDeepDiveArtist] = useState<string | null>(null);
 
+  const refreshFavourites = useCallback(() => {
+    setFavourites(getFavourites());
+  }, []);
+
   useEffect(() => {
     setMoodHistory(getMoodHistory());
-    setSavedSessions(getSavedSessions());
-  }, []);
+    refreshFavourites();
+  }, [refreshFavourites]);
 
   const loadTrending = useCallback(async () => {
     setLoading(true);
@@ -139,44 +140,6 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
     showToast("Here's something different for you.");
   };
 
-  const handleSaveSession = () => {
-    if (!quickMood || quickResults.length === 0) return;
-    const updated = saveSession(quickMood, seedArtist, quickResults, { tab: "quick" });
-    setSavedSessions(updated);
-    showToast("Session saved");
-  };
-
-  const handleDeepSaveSession = () => {
-    if (deepResults.length === 0) return;
-    const sessionName = deepPrompt.trim() || deepMood;
-    if (!sessionName) return;
-    const updated = saveSession(sessionName, deepArtists, deepResults, {
-      tab: "deep",
-      deepMood: deepMood ?? undefined,
-      deepPrompt: deepPrompt.trim() || undefined,
-    });
-    setSavedSessions(updated);
-    showToast("Session saved");
-  };
-
-  const handleRestoreSession = (session: SavedSession) => {
-    if (session.tab === "deep") {
-      setActiveTab("deep");
-      setDeepPrompt(session.deepPrompt ?? "");
-      setDeepArtists(session.seedArtist);
-      setDeepMood(session.deepMood ?? session.mood);
-      setDeepResults(session.results);
-      showToast("Session restored!");
-      return;
-    }
-    setActiveTab("quick");
-    setQuickMood(session.mood);
-    setSeedArtist(session.seedArtist);
-    setQuickResults(session.results);
-    setQuickBackup([]);
-    showToast("Session restored!");
-  };
-
   const handleDeepSubmit = async () => {
     if (!deepMood) return;
     setLoading(true);
@@ -189,7 +152,7 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
         prompt: effectivePrompt,
         artists: deepArtists.trim(),
         mood: deepMood,
-        adventure_level: adventureLevel,
+        adventure_level: 3,
       });
       setDeepResults(results);
     } catch {
@@ -203,7 +166,6 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
     setDeepPrompt("");
     setDeepArtists("");
     setDeepMood(null);
-    setAdventureLevel(3);
     setDeepResults([]);
     setShowDeepInfo(false);
     clearMoodHistory();
@@ -216,7 +178,6 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
     setDeepArtists(artist);
     setDeepPrompt(`I want to discover artists similar to ${artist}`);
     setDeepMood("Adventurous");
-    setAdventureLevel(3);
     setLoading(true);
     setError(null);
     try {
@@ -306,18 +267,12 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
                       rec={rec}
                       onDislike={() => handleNotForMe(i)}
                       onArtistClick={setDeepDiveArtist}
+                      onFavouriteChange={refreshFavourites}
                     />
                   ))}
                 </div>
                 <SessionSummary results={quickResults} />
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={handleSaveSession}
-                    className="rounded-full bg-spotify-green px-6 py-3 text-lg font-semibold text-black hover:opacity-90"
-                  >
-                    Save this session
-                  </button>
+                <div className="mt-4">
                   <button
                     type="button"
                     onClick={handleQuickStartOver}
@@ -329,7 +284,7 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
               </div>
             )}
 
-            <SavedSessions sessions={savedSessions} onRestore={handleRestoreSession} />
+            <MyFavourites favourites={favourites} />
           </section>
         )}
 
@@ -381,22 +336,6 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
               <MoodChips selected={deepMood} onSelect={setDeepMood} />
             </div>
 
-            <div className="mt-6">
-              <div className="mb-2 flex items-center justify-between text-lg">
-                <span className="text-spotify-muted">Safe</span>
-                <span className="font-bold text-spotify-green">{adventureLevel}</span>
-                <span className="text-spotify-muted">Wild</span>
-              </div>
-              <input
-                type="range"
-                min={1}
-                max={5}
-                value={adventureLevel}
-                onChange={(e) => setAdventureLevel(Number(e.target.value))}
-                className="w-full"
-              />
-            </div>
-
             <button
               type="button"
               onClick={handleDeepSubmit}
@@ -416,10 +355,10 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
                       key={`${rec.track_id ?? rec.track}-${i}`}
                       rec={rec}
                       onArtistClick={setDeepDiveArtist}
+                      onFavouriteChange={refreshFavourites}
                       deepContext={{
                         prompt: deepPrompt,
                         mood: deepMood!,
-                        adventureLevel,
                       }}
                     />
                   ))}
@@ -434,22 +373,16 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
                   </button>
                   <button
                     type="button"
-                    onClick={handleDeepSaveSession}
-                    className="rounded-full bg-spotify-green px-6 py-3 text-lg font-semibold text-black hover:opacity-90"
-                  >
-                    Save this session
-                  </button>
-                  <button
-                    type="button"
                     onClick={handleDeepStartOver}
                     className="rounded-full border border-spotify-border px-6 py-3 text-lg font-semibold text-white hover:border-spotify-green"
                   >
                     Start Over
                   </button>
                 </div>
-                <SavedSessions sessions={savedSessions} onRestore={handleRestoreSession} />
               </div>
             )}
+
+            <MyFavourites favourites={favourites} />
           </section>
         )}
 
@@ -484,6 +417,7 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
                     key={`${track.track_id ?? track.track}-${i}`}
                     track={track}
                     onArtistClick={setDeepDiveArtist}
+                    onFavouriteChange={refreshFavourites}
                   />
                 ))}
               </div>

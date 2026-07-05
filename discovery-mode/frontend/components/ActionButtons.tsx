@@ -1,20 +1,37 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useToast } from "@/contexts/ToastContext";
+import type { Recommendation } from "@/lib/api";
+import { isFavourite, toggleFavourite } from "@/lib/storage";
 
 interface ActionButtonsProps {
+  rec: Recommendation;
+  onFavouriteChange?: () => void;
   onDislike?: () => void;
 }
 
-export default function ActionButtons({ onDislike }: ActionButtonsProps) {
+export default function ActionButtons({
+  rec,
+  onFavouriteChange,
+  onDislike,
+}: ActionButtonsProps) {
   const { showToast } = useToast();
   const [favourited, setFavourited] = useState(false);
   const [liked, setLiked] = useState(false);
 
+  useEffect(() => {
+    setFavourited(isFavourite(rec));
+  }, [rec]);
+
   const handleFavourite = () => {
-    setFavourited(true);
-    showToast("Saved to favourites");
+    const updated = toggleFavourite(rec);
+    const nowFavourited = updated.some(
+      (f) => (f.track_id ?? `${f.artist}::${f.track}`) === (rec.track_id ?? `${rec.artist}::${rec.track}`)
+    );
+    setFavourited(nowFavourited);
+    onFavouriteChange?.();
+    showToast(nowFavourited ? "Saved to favourites" : "Removed from favourites");
   };
 
   const handleLike = () => {

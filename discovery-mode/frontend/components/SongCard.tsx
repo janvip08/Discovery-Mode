@@ -3,7 +3,7 @@
 import { useState } from "react";
 import AudioPreview from "./AudioPreview";
 import ActionButtons from "./ActionButtons";
-import { noveltyBadgeStyle, noveltyTooltip, type Recommendation } from "@/lib/api";
+import type { Recommendation } from "@/lib/api";
 import type { DeepContext } from "@/lib/types";
 
 interface SongCardProps {
@@ -11,6 +11,7 @@ interface SongCardProps {
   deepContext?: DeepContext;
   onDislike?: () => void;
   onArtistClick?: (artist: string) => void;
+  onFavouriteChange?: () => void;
 }
 
 export default function SongCard({
@@ -18,12 +19,13 @@ export default function SongCard({
   deepContext,
   onDislike,
   onArtistClick,
+  onFavouriteChange,
 }: SongCardProps) {
   const [whyExpanded, setWhyExpanded] = useState(false);
   const [fading, setFading] = useState(false);
 
   const whyText = deepContext
-    ? `You said "${deepContext.prompt}". This track shares ${rec.reason.toLowerCase()} which matches your ${deepContext.mood} mood at adventure level ${deepContext.adventureLevel}.`
+    ? `You said "${deepContext.prompt}". This track shares ${rec.reason.toLowerCase()} which matches your ${deepContext.mood} mood.`
     : "";
 
   const handleDislike = () => {
@@ -52,24 +54,15 @@ export default function SongCard({
         )}
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <button
-                type="button"
-                onClick={() => onArtistClick?.(rec.artist)}
-                className="truncate text-left text-lg font-semibold text-white hover:text-spotify-green hover:underline"
-              >
-                {rec.artist}
-              </button>
-              <p className="truncate text-base text-spotify-muted">{rec.track}</p>
-            </div>
-            <span
-              className="shrink-0 cursor-default rounded-full px-3 py-1 text-base font-bold"
-              style={noveltyBadgeStyle(rec.novelty_score)}
-              title={noveltyTooltip(rec.novelty_score)}
+          <div className="min-w-0">
+            <button
+              type="button"
+              onClick={() => onArtistClick?.(rec.artist)}
+              className="truncate text-left text-lg font-semibold text-white hover:text-spotify-green hover:underline"
             >
-              {rec.novelty_score}% novel
-            </span>
+              {rec.artist}
+            </button>
+            <p className="truncate text-base text-spotify-muted">{rec.track}</p>
           </div>
           <p className="mt-2 text-[14px] leading-snug text-white">{rec.reason}</p>
 
@@ -91,7 +84,11 @@ export default function SongCard({
       </div>
 
       <div className="flex flex-col items-end gap-3">
-        <ActionButtons onDislike={onDislike ? handleDislike : undefined} />
+        <ActionButtons
+          rec={rec}
+          onFavouriteChange={onFavouriteChange}
+          onDislike={onDislike ? handleDislike : undefined}
+        />
         <div className="flex items-center gap-2">
           {rec.preview_url && <AudioPreview previewUrl={rec.preview_url} />}
           {rec.spotify_url && (

@@ -8,7 +8,7 @@ interface HeaderProps {
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "quick", label: "Quick Discover" },
-  { id: "deep", label: "Deep Discover" },
+  { id: "deep", label: "Find My Sound" },
   { id: "trending", label: "Trending Now" },
 ];
 

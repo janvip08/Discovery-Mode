@@ -4,9 +4,10 @@ import type { TrendingTrack } from "@/lib/api";
 interface TrendingCardProps {
   track: TrendingTrack;
   onArtistClick?: (artist: string) => void;
+  onFavouriteChange?: () => void;
 }
 
-export default function TrendingCard({ track, onArtistClick }: TrendingCardProps) {
+export default function TrendingCard({ track, onArtistClick, onFavouriteChange }: TrendingCardProps) {
   return (
     <div className="card-glow flex flex-col rounded-lg border border-spotify-border bg-spotify-panel p-4 transition-shadow">
       <div className="relative mb-3">
@@ -35,7 +36,19 @@ export default function TrendingCard({ track, onArtistClick }: TrendingCardProps
       <p className="truncate text-base text-spotify-muted">{track.track}</p>
       <p className="mt-2 text-[13px] italic leading-snug text-spotify-green">{track.blurb}</p>
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <ActionButtons />
+        <ActionButtons
+          rec={{
+            artist: track.artist,
+            track: track.track,
+            reason: track.blurb,
+            spotify_url: track.spotify_url,
+            preview_url: track.preview_url,
+            album_image: track.album_image,
+            track_id: track.track_id,
+            novelty_score: 0,
+          }}
+          onFavouriteChange={onFavouriteChange}
+        />
         {track.spotify_url && (
           <a
             href={track.spotify_url}
