@@ -9,9 +9,12 @@ import MoodHistory from "@/components/MoodHistory";
 import SongCard from "@/components/SongCard";
 import TrendingCard from "@/components/TrendingCard";
 import SkeletonLoader from "@/components/SkeletonLoader";
+import TrendingCardSkeleton from "@/components/TrendingCardSkeleton";
 import QuickEmptyState from "@/components/QuickEmptyState";
 import AnimatedProgressBar from "@/components/AnimatedProgressBar";
 import FavouritesDrawer from "@/components/FavouritesDrawer";
+import OnboardingHint from "@/components/OnboardingHint";
+import DailyDiscoveryCard from "@/components/DailyDiscoveryCard";
 import GenreFilterChips from "@/components/GenreFilterChips";
 import ArtistDeepDivePanel from "@/components/ArtistDeepDivePanel";
 import SpotifyHome from "@/components/SpotifyHome";
@@ -24,13 +27,28 @@ import {
   type TrendingTrack,
 } from "@/lib/api";
 import {
+  addLikedSong,
   addMoodToHistory,
   clearMoodHistory,
   getFavourites,
+  getLikedSongs,
   getMoodHistory,
+  hasVisited,
+  markVisited,
+  songKey,
 } from "@/lib/storage";
 import { filterTrendingByGenre, type GenreFilter } from "@/lib/trendingGenres";
 import type { Tab } from "@/lib/types";
+
+function reorderToTop<T>(items: T[], target: T, keyFn: (item: T) => string): T[] {
+  const key = keyFn(target);
+  const rest = items.filter((item) => keyFn(item) !== key);
+  return [target, ...rest];
+}
+
+function trendingKey(track: TrendingTrack): string {
+  return track.track_id ?? `${track.artist}::${track.track}`;
+}
 
 function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
   const { showToast } = useToast();
@@ -46,6 +64,10 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
   const [favourites, setFavourites] = useState<Recommendation[]>([]);
   const [favouritesVersion, setFavouritesVersion] = useState(0);
   const [favouritesOpen, setFavouritesOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [likedVersion, setLikedVersion] = useState(0);
+  const [likedKeys, setLikedKeys] = useState<Set<string>>(new Set());
+  const [highlightedKey, setHighlightedKey] = useState<string | null>(null);
 
   const [deepPrompt, setDeepPrompt] = useState("");
   const [deepArtists, setDeepArtists] = useState("");
@@ -55,6 +77,8 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
 
   const [trendingTracks, setTrendingTracks] = useState<TrendingTrack[]>([]);
   const [trendingLoaded, setTrendingLoaded] = useState(false);
+  const [trendingLoading, setTrendingLoading] = useState(false);
+  const [trendingSearch, setTrendingSearch] = useState("");
   const [genreFilter, setGenreFilter] = useState<GenreFilter>("All");
 
   const [deepDiveArtist, setDeepDiveArtist] = useState<string | null>(null);
@@ -67,10 +91,42 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
   useEffect(() => {
     setMoodHistory(getMoodHistory());
     refreshFavourites();
+    setLikedKeys(new Set(getLikedSongs().map(songKey)));
+    setShowOnboarding(!hasVisited());
   }, [refreshFavourites]);
 
+  const dismissOnboarding = () => {
+    markVisited();
+    setShowOnboarding(false);
+  };
+
+  const handleLikeSong = useCallback(
+    (rec: Recommendation, source: "quick" | "deep" | "trending") => {
+      addLikedSong(rec);
+      setLikedVersion((v) => v + 1);
+      setLikedKeys(new Set(getLikedSongs().map(songKey)));
+
+      const key = songKey(rec);
+      setHighlightedKey(key);
+      setTimeout(() => setHighlightedKey(null), 3000);
+
+      if (source === "quick") {
+        setQuickResults((prev) => reorderToTop(prev, rec, songKey));
+      } else if (source === "deep") {
+        setDeepResults((prev) => reorderToTop(prev, rec, songKey));
+      } else {
+        setTrendingTracks((prev) => {
+          const match = prev.find((t) => trendingKey(t) === key);
+          if (!match) return prev;
+          return reorderToTop(prev, match, trendingKey);
+        });
+      }
+    },
+    []
+  );
+
   const loadTrending = useCallback(async () => {
-    setLoading(true);
+    setTrendingLoading(true);
     setError(null);
     try {
       const tracks = await fetchTrending();
@@ -79,15 +135,15 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
     } catch {
       setError("Something went wrong — please try again");
     } finally {
-      setLoading(false);
+      setTrendingLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    if (activeTab === "trending" && !trendingLoaded && !loading) {
+    if (activeTab === "trending" && !trendingLoaded && !trendingLoading) {
       loadTrending();
     }
-  }, [activeTab, trendingLoaded, loading, loadTrending]);
+  }, [activeTab, trendingLoaded, trendingLoading, loadTrending]);
 
   const runQuickDiscover = async (mood: string) => {
     setLoading(true);
@@ -204,6 +260,14 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
   };
 
   const filteredTrending = filterTrendingByGenre(trendingTracks, genreFilter);
+  const trendingSearchQuery = trendingSearch.trim().toLowerCase();
+  const searchFilteredTrending = trendingSearchQuery
+    ? filteredTrending.filter(
+        (track) =>
+          track.artist.toLowerCase().includes(trendingSearchQuery) ||
+          track.track.toLowerCase().includes(trendingSearchQuery)
+      )
+    : filteredTrending;
   const showQuickEmpty =
     activeTab === "quick" && !quickMood && quickResults.length === 0 && !loading;
 
@@ -216,6 +280,8 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
         favouritesCount={favourites.length}
         onOpenFavourites={() => setFavouritesOpen(true)}
       />
+
+      <OnboardingHint visible={showOnboarding} onDismiss={dismissOnboarding} />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
         {error && (
@@ -272,7 +338,11 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
                       onDislike={() => handleNotForMe(i)}
                       onArtistClick={setDeepDiveArtist}
                       onFavouriteChange={refreshFavourites}
+                      onLike={(r) => handleLikeSong(r, "quick")}
                       favouritesVersion={favouritesVersion}
+                      likedVersion={likedVersion}
+                      isLiked={likedKeys.has(songKey(rec))}
+                      highlighted={highlightedKey === songKey(rec)}
                     />
                   ))}
                 </div>
@@ -285,6 +355,7 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
                     Start Over
                   </button>
                 </div>
+                <DailyDiscoveryCard />
               </div>
             )}
           </section>
@@ -358,7 +429,11 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
                       rec={rec}
                       onArtistClick={setDeepDiveArtist}
                       onFavouriteChange={refreshFavourites}
+                      onLike={(r) => handleLikeSong(r, "deep")}
                       favouritesVersion={favouritesVersion}
+                      likedVersion={likedVersion}
+                      isLiked={likedKeys.has(songKey(rec))}
+                      highlighted={highlightedKey === songKey(rec)}
                       deepContext={{
                         prompt: deepPrompt,
                         mood: deepMood!,
@@ -409,23 +484,41 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
 
             <GenreFilterChips selected={genreFilter} onSelect={setGenreFilter} />
 
-            {loading && trendingTracks.length === 0 && <SkeletonLoader />}
+            <input
+              type="text"
+              placeholder="Search trending tracks..."
+              value={trendingSearch}
+              onChange={(e) => setTrendingSearch(e.target.value)}
+              className="mt-6 w-full rounded-lg px-4 py-3 text-lg"
+            />
 
-            {filteredTrending.length > 0 && (
+            {trendingLoading && trendingTracks.length === 0 && <TrendingCardSkeleton />}
+
+            {!trendingLoading && searchFilteredTrending.length > 0 && (
               <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredTrending.map((track, i) => (
+                {searchFilteredTrending.map((track, i) => (
                   <TrendingCard
                     key={`${track.track_id ?? track.track}-${i}`}
                     track={track}
                     onArtistClick={setDeepDiveArtist}
                     onFavouriteChange={refreshFavourites}
+                    onLike={(r) => handleLikeSong(r, "trending")}
                     favouritesVersion={favouritesVersion}
+                    likedVersion={likedVersion}
+                    isLiked={likedKeys.has(trendingKey(track))}
+                    highlighted={highlightedKey === trendingKey(track)}
                   />
                 ))}
               </div>
             )}
 
-            {trendingTracks.length > 0 && filteredTrending.length === 0 && (
+            {trendingSearchQuery && searchFilteredTrending.length === 0 && !trendingLoading && (
+              <p className="mt-8 text-lg text-spotify-muted">
+                No trending tracks match your search
+              </p>
+            )}
+
+            {!trendingSearchQuery && trendingTracks.length > 0 && filteredTrending.length === 0 && (
               <p className="mt-8 text-lg text-spotify-muted">
                 No tracks match this genre filter.
               </p>

@@ -2,7 +2,22 @@ import type { Recommendation } from "./api";
 
 const MOOD_HISTORY_KEY = "discovery-mode-mood-history";
 const FAVOURITES_KEY = "discovery-mode-favourites";
+const LIKED_SONGS_KEY = "likedSongs";
+const HAS_VISITED_KEY = "hasVisited";
 const MAX_MOOD_HISTORY = 3;
+
+export function songKey(rec: Recommendation): string {
+  return rec.track_id ?? `${rec.artist}::${rec.track}`;
+}
+
+export function hasVisited(): boolean {
+  if (typeof window === "undefined") return true;
+  return localStorage.getItem(HAS_VISITED_KEY) === "true";
+}
+
+export function markVisited(): void {
+  localStorage.setItem(HAS_VISITED_KEY, "true");
+}
 
 export function getMoodHistory(): string[] {
   if (typeof window === "undefined") return [];
@@ -25,7 +40,7 @@ export function clearMoodHistory(): void {
 }
 
 function favouriteKey(rec: Recommendation): string {
-  return rec.track_id ?? `${rec.artist}::${rec.track}`;
+  return songKey(rec);
 }
 
 export function getFavourites(): Recommendation[] {
@@ -58,4 +73,29 @@ export function toggleFavourite(rec: Recommendation): { favourites: Recommendati
     : [rec, ...favourites];
   localStorage.setItem(FAVOURITES_KEY, JSON.stringify(updated));
   return { favourites: updated, added: !exists };
+}
+
+export function getLikedSongs(): Recommendation[] {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(localStorage.getItem(LIKED_SONGS_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+export function isLikedSong(rec: Recommendation): boolean {
+  const key = songKey(rec);
+  return getLikedSongs().some((s) => songKey(s) === key);
+}
+
+export function addLikedSong(rec: Recommendation): Recommendation[] {
+  const liked = getLikedSongs();
+  const key = songKey(rec);
+  if (liked.some((s) => songKey(s) === key)) {
+    return liked;
+  }
+  const updated = [rec, ...liked];
+  localStorage.setItem(LIKED_SONGS_KEY, JSON.stringify(updated));
+  return updated;
 }

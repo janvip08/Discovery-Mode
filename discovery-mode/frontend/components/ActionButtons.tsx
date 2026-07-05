@@ -3,19 +3,23 @@
 import { useEffect, useState } from "react";
 import { useToast } from "@/contexts/ToastContext";
 import type { Recommendation } from "@/lib/api";
-import { isFavourite, toggleFavourite } from "@/lib/storage";
+import { isFavourite, isLikedSong, toggleFavourite } from "@/lib/storage";
 
 interface ActionButtonsProps {
   rec: Recommendation;
   favouritesVersion?: number;
+  likedVersion?: number;
   onFavouriteChange?: () => void;
+  onLike?: (rec: Recommendation) => void;
   onDislike?: () => void;
 }
 
 export default function ActionButtons({
   rec,
   favouritesVersion = 0,
+  likedVersion = 0,
   onFavouriteChange,
+  onLike,
   onDislike,
 }: ActionButtonsProps) {
   const { showToast } = useToast();
@@ -24,7 +28,8 @@ export default function ActionButtons({
 
   useEffect(() => {
     setFavourited(isFavourite(rec));
-  }, [rec, favouritesVersion]);
+    setLiked(isLikedSong(rec));
+  }, [rec, favouritesVersion, likedVersion]);
 
   const handleFavourite = () => {
     const { added } = toggleFavourite(rec);
@@ -34,8 +39,10 @@ export default function ActionButtons({
   };
 
   const handleLike = () => {
+    if (liked) return;
     setLiked(true);
-    showToast("Liked");
+    onLike?.(rec);
+    showToast("Got it — finding more like this ♪");
   };
 
   const handleDislike = () => {
@@ -79,6 +86,7 @@ export default function ActionButtons({
             : "border-spotify-border text-spotify-muted hover:border-spotify-green hover:text-spotify-green"
         }`}
         aria-label="Thumbs up"
+        aria-pressed={liked}
       >
         <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
           <path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14zm-8 11H3V9h3v11z" />

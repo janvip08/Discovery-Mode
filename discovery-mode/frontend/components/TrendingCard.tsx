@@ -1,21 +1,44 @@
 import ActionButtons from "./ActionButtons";
-import type { TrendingTrack } from "@/lib/api";
+import type { Recommendation, TrendingTrack } from "@/lib/api";
 
 interface TrendingCardProps {
   track: TrendingTrack;
   onArtistClick?: (artist: string) => void;
   onFavouriteChange?: () => void;
+  onLike?: (rec: Recommendation) => void;
   favouritesVersion?: number;
+  likedVersion?: number;
+  isLiked?: boolean;
+  highlighted?: boolean;
 }
 
 export default function TrendingCard({
   track,
   onArtistClick,
   onFavouriteChange,
+  onLike,
   favouritesVersion,
+  likedVersion,
+  isLiked = false,
+  highlighted = false,
 }: TrendingCardProps) {
+  const rec: Recommendation = {
+    artist: track.artist,
+    track: track.track,
+    reason: track.blurb,
+    spotify_url: track.spotify_url,
+    preview_url: track.preview_url,
+    album_image: track.album_image,
+    track_id: track.track_id,
+    novelty_score: 0,
+  };
+
   return (
-    <div className="card-glow flex flex-col rounded-lg border border-spotify-border bg-spotify-panel p-4 transition-shadow">
+    <div
+      className={`card-glow flex flex-col rounded-lg border bg-spotify-panel p-4 transition-all duration-300 ${
+        highlighted ? "border-spotify-green ring-2 ring-spotify-green/40" : "border-spotify-border"
+      }`}
+    >
       <div className="relative mb-3">
         {track.album_image ? (
           <img
@@ -40,21 +63,17 @@ export default function TrendingCard({
         {track.artist}
       </button>
       <p className="truncate text-base text-spotify-muted">{track.track}</p>
+      {isLiked && (
+        <p className="mt-0.5 text-sm text-spotify-green">✓ You liked this</p>
+      )}
       <p className="mt-2 text-[13px] italic leading-snug text-spotify-green">{track.blurb}</p>
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <ActionButtons
-          rec={{
-            artist: track.artist,
-            track: track.track,
-            reason: track.blurb,
-            spotify_url: track.spotify_url,
-            preview_url: track.preview_url,
-            album_image: track.album_image,
-            track_id: track.track_id,
-            novelty_score: 0,
-          }}
+          rec={rec}
           onFavouriteChange={onFavouriteChange}
+          onLike={onLike}
           favouritesVersion={favouritesVersion}
+          likedVersion={likedVersion}
         />
         {track.spotify_url && (
           <a

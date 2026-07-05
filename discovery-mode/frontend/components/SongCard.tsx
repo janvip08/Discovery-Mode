@@ -12,7 +12,11 @@ interface SongCardProps {
   onDislike?: () => void;
   onArtistClick?: (artist: string) => void;
   onFavouriteChange?: () => void;
+  onLike?: (rec: Recommendation) => void;
   favouritesVersion?: number;
+  likedVersion?: number;
+  isLiked?: boolean;
+  highlighted?: boolean;
 }
 
 export default function SongCard({
@@ -21,7 +25,11 @@ export default function SongCard({
   onDislike,
   onArtistClick,
   onFavouriteChange,
+  onLike,
   favouritesVersion,
+  likedVersion,
+  isLiked = false,
+  highlighted = false,
 }: SongCardProps) {
   const [whyExpanded, setWhyExpanded] = useState(false);
   const [fading, setFading] = useState(false);
@@ -38,9 +46,9 @@ export default function SongCard({
 
   return (
     <div
-      className={`card-glow flex flex-col gap-3 rounded-lg border border-spotify-border bg-spotify-panel p-4 transition-all duration-300 sm:flex-row sm:items-start ${
-        fading ? "scale-95 opacity-0" : "opacity-100"
-      }`}
+      className={`card-glow flex flex-col gap-3 rounded-lg border bg-spotify-panel p-4 transition-all duration-300 sm:flex-row sm:items-start ${
+        highlighted ? "border-spotify-green ring-2 ring-spotify-green/40" : "border-spotify-border"
+      } ${fading ? "scale-95 opacity-0" : "opacity-100"}`}
     >
       <div className="flex flex-1 gap-4">
         {rec.album_image ? (
@@ -65,6 +73,9 @@ export default function SongCard({
               {rec.artist}
             </button>
             <p className="truncate text-base text-spotify-muted">{rec.track}</p>
+            {isLiked && (
+              <p className="mt-0.5 text-sm text-spotify-green">✓ You liked this</p>
+            )}
           </div>
           <p className="mt-2 text-[14px] leading-snug text-white">{rec.reason}</p>
 
@@ -89,7 +100,9 @@ export default function SongCard({
         <ActionButtons
           rec={rec}
           favouritesVersion={favouritesVersion}
+          likedVersion={likedVersion}
           onFavouriteChange={onFavouriteChange}
+          onLike={onLike}
           onDislike={onDislike ? handleDislike : undefined}
         />
         <div className="flex items-center gap-2">
