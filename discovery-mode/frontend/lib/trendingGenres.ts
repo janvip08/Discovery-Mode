@@ -3,7 +3,6 @@ import type { TrendingTrack } from "./api";
 export type GenreFilter =
   | "All"
   | "Bollywood"
-  | "Hindi Indie"
   | "Pop"
   | "Hip-Hop"
   | "Regional";
@@ -11,7 +10,6 @@ export type GenreFilter =
 export const GENRE_FILTERS: GenreFilter[] = [
   "All",
   "Bollywood",
-  "Hindi Indie",
   "Pop",
   "Hip-Hop",
   "Regional",
@@ -19,7 +17,6 @@ export const GENRE_FILTERS: GenreFilter[] = [
 
 const GENRE_KEYWORDS: Record<Exclude<GenreFilter, "All">, string[]> = {
   Bollywood: ["bollywood", "film", "movie", "hindi song", "loves", "romantic"],
-  "Hindi Indie": ["indie", "independent", "alternative", "underground", "fresh"],
   Pop: ["pop", "catchy", "mainstream", "hit", "chart", "viral"],
   "Hip-Hop": ["hip-hop", "hip hop", "rap", "trap", "beats", "drip", "bars"],
   Regional: [
