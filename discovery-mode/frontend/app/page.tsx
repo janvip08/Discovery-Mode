@@ -14,7 +14,6 @@ import QuickEmptyState from "@/components/QuickEmptyState";
 import AnimatedProgressBar from "@/components/AnimatedProgressBar";
 import FavouritesDrawer from "@/components/FavouritesDrawer";
 import OnboardingHint from "@/components/OnboardingHint";
-import DailyDiscoveryCard from "@/components/DailyDiscoveryCard";
 import GenreFilterChips from "@/components/GenreFilterChips";
 import ArtistDeepDivePanel from "@/components/ArtistDeepDivePanel";
 import SpotifyHome from "@/components/SpotifyHome";
@@ -355,7 +354,6 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
                     Start Over
                   </button>
                 </div>
-                <DailyDiscoveryCard />
               </div>
             )}
           </section>
