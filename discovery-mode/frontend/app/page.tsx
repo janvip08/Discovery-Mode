@@ -11,8 +11,7 @@ import TrendingCard from "@/components/TrendingCard";
 import SkeletonLoader from "@/components/SkeletonLoader";
 import QuickEmptyState from "@/components/QuickEmptyState";
 import AnimatedProgressBar from "@/components/AnimatedProgressBar";
-import SessionSummary from "@/components/SessionSummary";
-import MyFavourites from "@/components/MyFavourites";
+import FavouritesDrawer from "@/components/FavouritesDrawer";
 import GenreFilterChips from "@/components/GenreFilterChips";
 import ArtistDeepDivePanel from "@/components/ArtistDeepDivePanel";
 import SpotifyHome from "@/components/SpotifyHome";
@@ -45,6 +44,8 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
   const [quickResults, setQuickResults] = useState<Recommendation[]>([]);
   const [quickBackup, setQuickBackup] = useState<Recommendation[]>([]);
   const [favourites, setFavourites] = useState<Recommendation[]>([]);
+  const [favouritesVersion, setFavouritesVersion] = useState(0);
+  const [favouritesOpen, setFavouritesOpen] = useState(false);
 
   const [deepPrompt, setDeepPrompt] = useState("");
   const [deepArtists, setDeepArtists] = useState("");
@@ -60,6 +61,7 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
 
   const refreshFavourites = useCallback(() => {
     setFavourites(getFavourites());
+    setFavouritesVersion((v) => v + 1);
   }, []);
 
   useEffect(() => {
@@ -211,6 +213,8 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
         activeTab={activeTab}
         onTabChange={handleTabChange}
         onBackToSpotify={onBackToSpotify}
+        favouritesCount={favourites.length}
+        onOpenFavourites={() => setFavouritesOpen(true)}
       />
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
@@ -268,10 +272,10 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
                       onDislike={() => handleNotForMe(i)}
                       onArtistClick={setDeepDiveArtist}
                       onFavouriteChange={refreshFavourites}
+                      favouritesVersion={favouritesVersion}
                     />
                   ))}
                 </div>
-                <SessionSummary results={quickResults} />
                 <div className="mt-4">
                   <button
                     type="button"
@@ -283,8 +287,6 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
                 </div>
               </div>
             )}
-
-            <MyFavourites favourites={favourites} />
           </section>
         )}
 
@@ -356,6 +358,7 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
                       rec={rec}
                       onArtistClick={setDeepDiveArtist}
                       onFavouriteChange={refreshFavourites}
+                      favouritesVersion={favouritesVersion}
                       deepContext={{
                         prompt: deepPrompt,
                         mood: deepMood!,
@@ -381,8 +384,6 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
                 </div>
               </div>
             )}
-
-            <MyFavourites favourites={favourites} />
           </section>
         )}
 
@@ -418,6 +419,7 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
                     track={track}
                     onArtistClick={setDeepDiveArtist}
                     onFavouriteChange={refreshFavourites}
+                    favouritesVersion={favouritesVersion}
                   />
                 ))}
               </div>
@@ -442,6 +444,13 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
           onDiscoverSimilar={handleDiscoverSimilar}
         />
       )}
+
+      <FavouritesDrawer
+        open={favouritesOpen}
+        favourites={favourites}
+        onClose={() => setFavouritesOpen(false)}
+        onFavouriteChange={refreshFavourites}
+      />
     </div>
   );
 }

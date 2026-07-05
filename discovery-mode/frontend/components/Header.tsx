@@ -1,9 +1,13 @@
+"use client";
+
 import type { Tab } from "@/lib/types";
 
 interface HeaderProps {
   activeTab: Tab;
   onTabChange: (tab: Tab) => void;
   onBackToSpotify?: () => void;
+  favouritesCount: number;
+  onOpenFavourites: () => void;
 }
 
 const TABS: { id: Tab; label: string }[] = [
@@ -12,7 +16,13 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "trending", label: "Trending Now" },
 ];
 
-export default function Header({ activeTab, onTabChange, onBackToSpotify }: HeaderProps) {
+export default function Header({
+  activeTab,
+  onTabChange,
+  onBackToSpotify,
+  favouritesCount,
+  onOpenFavourites,
+}: HeaderProps) {
   return (
     <>
       {onBackToSpotify && (
@@ -48,22 +58,44 @@ export default function Header({ activeTab, onTabChange, onBackToSpotify }: Head
               </p>
             </div>
           </div>
-          <nav className="hidden flex-wrap gap-2 md:flex">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => onTabChange(tab.id)}
-                className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                  activeTab === tab.id
-                    ? "bg-spotify-green text-black"
-                    : "bg-transparent text-white hover:bg-white/10"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </nav>
+          <div className="flex items-center gap-2">
+            <nav className="hidden flex-wrap gap-2 md:flex">
+              {TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => onTabChange(tab.id)}
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                    activeTab === tab.id
+                      ? "bg-spotify-green text-black"
+                      : "bg-transparent text-white hover:bg-white/10"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
+            <button
+              type="button"
+              onClick={onOpenFavourites}
+              className="relative flex items-center gap-1 rounded-full border border-spotify-border px-3 py-2 text-sm font-medium text-white transition-colors hover:border-spotify-green hover:text-spotify-green"
+              aria-label="Open favourites"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                />
+              </svg>
+              {favouritesCount > 0 && (
+                <span className="text-sm font-semibold text-spotify-green">
+                  {favouritesCount}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       </header>
       <div className="bg-[#0a2e1a] px-4 py-2 text-center text-xs text-spotify-green">

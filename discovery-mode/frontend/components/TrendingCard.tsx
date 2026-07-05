@@ -5,9 +5,15 @@ interface TrendingCardProps {
   track: TrendingTrack;
   onArtistClick?: (artist: string) => void;
   onFavouriteChange?: () => void;
+  favouritesVersion?: number;
 }
 
-export default function TrendingCard({ track, onArtistClick, onFavouriteChange }: TrendingCardProps) {
+export default function TrendingCard({
+  track,
+  onArtistClick,
+  onFavouriteChange,
+  favouritesVersion,
+}: TrendingCardProps) {
   return (
     <div className="card-glow flex flex-col rounded-lg border border-spotify-border bg-spotify-panel p-4 transition-shadow">
       <div className="relative mb-3">
@@ -48,6 +54,7 @@ export default function TrendingCard({ track, onArtistClick, onFavouriteChange }
             novelty_score: 0,
           }}
           onFavouriteChange={onFavouriteChange}
+          favouritesVersion={favouritesVersion}
         />
         {track.spotify_url && (
           <a

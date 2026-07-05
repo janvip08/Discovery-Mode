@@ -42,7 +42,14 @@ export function isFavourite(rec: Recommendation): boolean {
   return getFavourites().some((f) => favouriteKey(f) === key);
 }
 
-export function toggleFavourite(rec: Recommendation): Recommendation[] {
+export function removeFavourite(rec: Recommendation): Recommendation[] {
+  const key = favouriteKey(rec);
+  const updated = getFavourites().filter((f) => favouriteKey(f) !== key);
+  localStorage.setItem(FAVOURITES_KEY, JSON.stringify(updated));
+  return updated;
+}
+
+export function toggleFavourite(rec: Recommendation): { favourites: Recommendation[]; added: boolean } {
   const favourites = getFavourites();
   const key = favouriteKey(rec);
   const exists = favourites.some((f) => favouriteKey(f) === key);
@@ -50,5 +57,5 @@ export function toggleFavourite(rec: Recommendation): Recommendation[] {
     ? favourites.filter((f) => favouriteKey(f) !== key)
     : [rec, ...favourites];
   localStorage.setItem(FAVOURITES_KEY, JSON.stringify(updated));
-  return updated;
+  return { favourites: updated, added: !exists };
 }

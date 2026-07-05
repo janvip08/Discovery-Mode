@@ -7,12 +7,14 @@ import { isFavourite, toggleFavourite } from "@/lib/storage";
 
 interface ActionButtonsProps {
   rec: Recommendation;
+  favouritesVersion?: number;
   onFavouriteChange?: () => void;
   onDislike?: () => void;
 }
 
 export default function ActionButtons({
   rec,
+  favouritesVersion = 0,
   onFavouriteChange,
   onDislike,
 }: ActionButtonsProps) {
@@ -22,16 +24,13 @@ export default function ActionButtons({
 
   useEffect(() => {
     setFavourited(isFavourite(rec));
-  }, [rec]);
+  }, [rec, favouritesVersion]);
 
   const handleFavourite = () => {
-    const updated = toggleFavourite(rec);
-    const nowFavourited = updated.some(
-      (f) => (f.track_id ?? `${f.artist}::${f.track}`) === (rec.track_id ?? `${rec.artist}::${rec.track}`)
-    );
-    setFavourited(nowFavourited);
+    const { added } = toggleFavourite(rec);
+    setFavourited(added);
     onFavouriteChange?.();
-    showToast(nowFavourited ? "Saved to favourites" : "Removed from favourites");
+    showToast(added ? "Added to favourites ♡" : "Removed from favourites");
   };
 
   const handleLike = () => {
@@ -54,7 +53,8 @@ export default function ActionButtons({
             ? "border-spotify-green bg-spotify-green text-black"
             : "border-spotify-border text-spotify-muted hover:border-spotify-green hover:text-spotify-green"
         }`}
-        aria-label="Favourite"
+        aria-label={favourited ? "Remove from favourites" : "Add to favourites"}
+        aria-pressed={favourited}
       >
         <svg
           className="h-5 w-5"

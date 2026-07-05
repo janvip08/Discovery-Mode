@@ -12,6 +12,7 @@ interface SongCardProps {
   onDislike?: () => void;
   onArtistClick?: (artist: string) => void;
   onFavouriteChange?: () => void;
+  favouritesVersion?: number;
 }
 
 export default function SongCard({
@@ -20,6 +21,7 @@ export default function SongCard({
   onDislike,
   onArtistClick,
   onFavouriteChange,
+  favouritesVersion,
 }: SongCardProps) {
   const [whyExpanded, setWhyExpanded] = useState(false);
   const [fading, setFading] = useState(false);
@@ -86,6 +88,7 @@ export default function SongCard({
       <div className="flex flex-col items-end gap-3">
         <ActionButtons
           rec={rec}
+          favouritesVersion={favouritesVersion}
           onFavouriteChange={onFavouriteChange}
           onDislike={onDislike ? handleDislike : undefined}
         />
