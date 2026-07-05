@@ -1,11 +1,15 @@
+"use client";
+
+import type { ReactNode } from "react";
 import type { Tab } from "@/lib/types";
 
 interface BottomNavProps {
   activeTab: Tab;
   onTabChange: (tab: Tab) => void;
+  visitedTabs: Tab[];
 }
 
-const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode }[] = [
+const NAV_ITEMS: { id: Tab; label: string; icon: ReactNode }[] = [
   {
     id: "quick",
     label: "Quick",
@@ -17,7 +21,7 @@ const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   },
   {
     id: "deep",
-    label: "Find My Sound",
+    label: "Find Sound",
     icon: (
       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
@@ -40,10 +44,14 @@ const NAV_ITEMS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   },
 ];
 
-export default function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
+function shouldPulse(tabId: Tab, activeTab: Tab, visitedTabs: Tab[]): boolean {
+  return tabId !== activeTab && !visitedTabs.includes(tabId);
+}
+
+export default function BottomNav({ activeTab, onTabChange, visitedTabs }: BottomNavProps) {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-spotify-green bg-spotify-panel md:hidden">
-      <div className="flex items-center justify-around py-2">
+      <div className="flex items-stretch justify-around px-1 py-1">
         {NAV_ITEMS.map((item) => {
           const isActive = activeTab === item.id;
           return (
@@ -51,12 +59,17 @@ export default function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
               key={item.id}
               type="button"
               onClick={() => onTabChange(item.id)}
-              className={`flex flex-col items-center gap-1 px-4 py-2 text-xs font-medium transition-colors ${
+              className={`relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-medium transition-colors ${
                 isActive ? "text-spotify-green" : "text-spotify-muted"
               }`}
             >
-              {item.icon}
-              <span>{item.label}</span>
+              <span className="relative">
+                {item.icon}
+                {shouldPulse(item.id, activeTab, visitedTabs) && (
+                  <span className="tab-pulse-dot" aria-hidden="true" />
+                )}
+              </span>
+              <span className="max-w-full truncate text-center leading-tight">{item.label}</span>
             </button>
           );
         })}

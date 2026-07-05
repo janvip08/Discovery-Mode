@@ -14,6 +14,7 @@ import QuickEmptyState from "@/components/QuickEmptyState";
 import AnimatedProgressBar from "@/components/AnimatedProgressBar";
 import FavouritesDrawer from "@/components/FavouritesDrawer";
 import OnboardingHint from "@/components/OnboardingHint";
+import FeatureTour from "@/components/FeatureTour";
 import GenreFilterChips from "@/components/GenreFilterChips";
 import ArtistDeepDivePanel from "@/components/ArtistDeepDivePanel";
 import SpotifyHome from "@/components/SpotifyHome";
@@ -32,7 +33,9 @@ import {
   getFavourites,
   getLikedSongs,
   getMoodHistory,
+  getVisitedTabs,
   hasVisited,
+  markTabVisited,
   markVisited,
   songKey,
 } from "@/lib/storage";
@@ -64,6 +67,7 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
   const [favouritesVersion, setFavouritesVersion] = useState(0);
   const [favouritesOpen, setFavouritesOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [visitedTabs, setVisitedTabs] = useState<Tab[]>([]);
   const [likedVersion, setLikedVersion] = useState(0);
   const [likedKeys, setLikedKeys] = useState<Set<string>>(new Set());
   const [highlightedKey, setHighlightedKey] = useState<string | null>(null);
@@ -92,6 +96,9 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
     refreshFavourites();
     setLikedKeys(new Set(getLikedSongs().map(songKey)));
     setShowOnboarding(!hasVisited());
+    setVisitedTabs(getVisitedTabs());
+    markTabVisited("quick");
+    setVisitedTabs(getVisitedTabs());
   }, [refreshFavourites]);
 
   const dismissOnboarding = () => {
@@ -254,6 +261,8 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
   };
 
   const handleTabChange = (tab: Tab) => {
+    markTabVisited(tab);
+    setVisitedTabs(getVisitedTabs());
     setActiveTab(tab);
     setError(null);
   };
@@ -278,15 +287,20 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
         onBackToSpotify={onBackToSpotify}
         favouritesCount={favourites.length}
         onOpenFavourites={() => setFavouritesOpen(true)}
+        visitedTabs={visitedTabs}
       />
 
       <OnboardingHint visible={showOnboarding} onDismiss={dismissOnboarding} />
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 pb-24 md:pb-8">
         {error && (
           <div className="mb-6 rounded-lg border border-red-800 bg-red-950/50 px-4 py-3 text-lg text-red-300">
             {error}
           </div>
+        )}
+
+        {!showOnboarding && (
+          <FeatureTour activeTab={activeTab} onTabChange={handleTabChange} />
         )}
 
         {activeTab === "quick" && (
@@ -526,7 +540,11 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
       </main>
 
       <Footer />
-      <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
+      <BottomNav
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        visitedTabs={visitedTabs}
+      />
 
       {deepDiveArtist && (
         <ArtistDeepDivePanel

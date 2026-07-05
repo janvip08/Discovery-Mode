@@ -8,6 +8,7 @@ interface HeaderProps {
   onBackToSpotify?: () => void;
   favouritesCount: number;
   onOpenFavourites: () => void;
+  visitedTabs: Tab[];
 }
 
 const TABS: { id: Tab; label: string }[] = [
@@ -16,12 +17,17 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "trending", label: "Trending Now" },
 ];
 
+function shouldPulse(tabId: Tab, activeTab: Tab, visitedTabs: Tab[]): boolean {
+  return tabId !== activeTab && !visitedTabs.includes(tabId);
+}
+
 export default function Header({
   activeTab,
   onTabChange,
   onBackToSpotify,
   favouritesCount,
   onOpenFavourites,
+  visitedTabs,
 }: HeaderProps) {
   return (
     <>
@@ -65,13 +71,16 @@ export default function Header({
                   key={tab.id}
                   type="button"
                   onClick={() => onTabChange(tab.id)}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                  className={`relative rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                     activeTab === tab.id
                       ? "bg-spotify-green text-black"
                       : "bg-transparent text-white hover:bg-white/10"
                   }`}
                 >
                   {tab.label}
+                  {shouldPulse(tab.id, activeTab, visitedTabs) && (
+                    <span className="tab-pulse-dot" aria-hidden="true" />
+                  )}
                 </button>
               ))}
             </nav>

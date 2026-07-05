@@ -1,9 +1,11 @@
 import type { Recommendation } from "./api";
+import type { Tab } from "./types";
 
 const MOOD_HISTORY_KEY = "discovery-mode-mood-history";
 const FAVOURITES_KEY = "discovery-mode-favourites";
 const LIKED_SONGS_KEY = "likedSongs";
 const HAS_VISITED_KEY = "hasVisited";
+const VISITED_TABS_KEY = "visitedTabs";
 const MAX_MOOD_HISTORY = 3;
 
 export function songKey(rec: Recommendation): string {
@@ -17,6 +19,25 @@ export function hasVisited(): boolean {
 
 export function markVisited(): void {
   localStorage.setItem(HAS_VISITED_KEY, "true");
+}
+
+export function getVisitedTabs(): Tab[] {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(localStorage.getItem(VISITED_TABS_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+export function markTabVisited(tab: Tab): void {
+  const visited = getVisitedTabs();
+  if (visited.includes(tab)) return;
+  localStorage.setItem(VISITED_TABS_KEY, JSON.stringify([...visited, tab]));
+}
+
+export function isTabVisited(tab: Tab): boolean {
+  return getVisitedTabs().includes(tab);
 }
 
 export function getMoodHistory(): string[] {

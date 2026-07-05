@@ -59,3 +59,40 @@ input[type="range"] {
     background-position: -200% 0;
   }
 }
+
+@keyframes tab-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.75);
+  }
+}
+
+.tab-pulse-dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  height: 8px;
+  width: 8px;
+  border-radius: 9999px;
+  background-color: #1db954;
+  animation: tab-pulse 2s ease-in-out infinite;
+}
+
+.feature-tour-card.border-spotify-green {
+  animation: feature-glow 2.5s ease-in-out infinite;
+}
+
+@keyframes feature-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(29, 185, 84, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 12px 2px rgba(29, 185, 84, 0.35);
+  }
+}
