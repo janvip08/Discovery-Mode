@@ -299,16 +299,16 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
           </div>
         )}
 
-        {!showOnboarding && (
-          <FeatureTour activeTab={activeTab} onTabChange={handleTabChange} />
-        )}
-
         {activeTab === "quick" && (
           <section>
             <h2 className="text-2xl font-bold text-white">Start discovering in 2 taps</h2>
             <p className="mt-1 text-lg text-spotify-muted">
               Pick a mood, hit go. Music that drifts from familiar to fresh.
             </p>
+
+            <div className="mt-6">
+              <FeatureTour activeTab={activeTab} onTabChange={handleTabChange} />
+            </div>
 
             <div className="mt-6">
               <MoodHistory moods={moodHistory} onSelect={handleQuickMoodSelect} />

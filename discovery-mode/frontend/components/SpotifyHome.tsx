@@ -54,19 +54,17 @@ function SpotifyLogo({ className = "h-8 w-8" }: { className?: string }) {
 function NavIcon({
   label,
   active,
-  blurred,
   children,
 }: {
   label: string;
   active?: boolean;
-  blurred?: boolean;
   children: ReactNode;
 }) {
   return (
     <div
       className={`flex flex-1 flex-col items-center gap-1 py-2 ${
         active ? "text-white" : "text-spotify-muted"
-      } ${blurred ? "blur-[1px] opacity-50" : ""}`}
+      }`}
       aria-label={label}
     >
       {children}
@@ -90,13 +88,13 @@ export default function SpotifyHome({ onEnterDiscovery }: SpotifyHomeProps) {
             </div>
             <h1 className="text-xl font-bold text-white sm:text-2xl">{getTimeGreeting()}</h1>
           </div>
-          <nav className="mt-2 flex border-t border-[#282828]/60">
+          <nav className="mt-2 flex border-t border-[#282828]/60 blur-[1px] opacity-40">
             <NavIcon label="Home" active>
               <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 3l9 8v10a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1V11l9-8z" />
               </svg>
             </NavIcon>
-            <NavIcon label="Search" blurred>
+            <NavIcon label="Search">
               <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
@@ -105,7 +103,7 @@ export default function SpotifyHome({ onEnterDiscovery }: SpotifyHomeProps) {
                 />
               </svg>
             </NavIcon>
-            <NavIcon label="Library" blurred>
+            <NavIcon label="Library">
               <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M6 3h3v18H6V3zm5 4h3v14h-3V7zm5-2h3v16h-3V5z" />
               </svg>
@@ -139,7 +137,7 @@ export default function SpotifyHome({ onEnterDiscovery }: SpotifyHomeProps) {
             {MADE_FOR_YOU.map((playlist) => (
               <div
                 key={playlist.id}
-                className="flex cursor-default items-center gap-4 rounded-md bg-spotify-panel/80 p-3 blur-[2px] opacity-40"
+                className="flex cursor-default items-center gap-4 rounded-md bg-spotify-panel/80 p-3 blur-[1px] opacity-50"
               >
                 <div
                   className={`flex h-14 w-14 shrink-0 items-center justify-center rounded bg-gradient-to-br ${playlist.gradient} text-2xl shadow-lg`}

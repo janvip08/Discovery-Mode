@@ -82,7 +82,3 @@ input[type="range"] {
   background-color: #1db954;
   animation: tab-pulse 2s ease-in-out infinite;
 }
-
-.feature-tour-card:hover {
-  box-shadow: 0 4px 14px rgba(29, 185, 84, 0.2);
-}
