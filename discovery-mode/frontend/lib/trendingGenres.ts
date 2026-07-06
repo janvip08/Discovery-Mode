@@ -32,14 +32,16 @@ const GENRE_KEYWORDS: Record<Exclude<GenreFilter, "All">, string[]> = {
   ],
 };
 
-function trackText(track: TrendingTrack): string {
-  return `${track.artist} ${track.track} ${track.blurb}`.toLowerCase();
+function trackFields(track: TrendingTrack): string[] {
+  return [track.artist, track.track, track.blurb].map((s) => (s ?? "").toLowerCase());
 }
 
 export function matchesGenre(track: TrendingTrack, genre: GenreFilter): boolean {
   if (genre === "All") return true;
-  const text = trackText(track);
-  return GENRE_KEYWORDS[genre].some((kw) => text.includes(kw));
+  const fields = trackFields(track);
+  return GENRE_KEYWORDS[genre].some((kw) =>
+    fields.some((field) => field.includes(kw))
+  );
 }
 
 export function filterTrendingByGenre(
@@ -47,5 +49,6 @@ export function filterTrendingByGenre(
   genre: GenreFilter
 ): TrendingTrack[] {
   if (genre === "All") return tracks;
-  return tracks.filter((t) => matchesGenre(t, genre));
+  const filtered = tracks.filter((t) => matchesGenre(t, genre));
+  return filtered.length > 0 ? filtered : tracks;
 }

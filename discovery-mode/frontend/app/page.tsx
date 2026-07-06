@@ -579,12 +579,6 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
                 No trending tracks match your search
               </p>
             )}
-
-            {!trendingSearchQuery && trendingTracks.length > 0 && filteredTrending.length === 0 && (
-              <p className="mt-8 text-lg text-spotify-muted">
-                No tracks match this genre filter.
-              </p>
-            )}
           </section>
         )}
       </main>
