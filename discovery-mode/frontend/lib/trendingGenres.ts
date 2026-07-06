@@ -16,9 +16,9 @@ export const GENRE_FILTERS: GenreFilter[] = [
 ] as const;
 
 const GENRE_KEYWORDS: Record<Exclude<GenreFilter, "All">, string[]> = {
-  Bollywood: ["bollywood", "film", "movie", "hindi song", "loves", "romantic"],
-  Pop: ["pop", "catchy", "mainstream", "hit", "chart", "viral"],
-  "Hip-Hop": ["hip-hop", "hip hop", "rap", "trap", "beats", "drip", "bars"],
+  Bollywood: ["bollywood", "hindi", "indian"],
+  Pop: ["pop", "catchy", "mainstream", "hit", "chart", "viral", "single"],
+  "Hip-Hop": ["hip-hop", "hip hop", "hiphop", "rap", "trap", "beats", "drip", "bars"],
   Regional: [
     "tamil",
     "telugu",
@@ -29,6 +29,7 @@ const GENRE_KEYWORDS: Record<Exclude<GenreFilter, "All">, string[]> = {
     "marathi",
     "regional",
     "bhojpuri",
+    "india",
   ],
 };
 
@@ -36,12 +37,13 @@ function trackFields(track: TrendingTrack): string[] {
   return [track.artist, track.track, track.blurb].map((s) => (s ?? "").toLowerCase());
 }
 
+function fieldMatchesKeywords(fields: string[], keywords: string[]): boolean {
+  return keywords.some((kw) => fields.some((field) => field.includes(kw)));
+}
+
 export function matchesGenre(track: TrendingTrack, genre: GenreFilter): boolean {
   if (genre === "All") return true;
-  const fields = trackFields(track);
-  return GENRE_KEYWORDS[genre].some((kw) =>
-    fields.some((field) => field.includes(kw))
-  );
+  return fieldMatchesKeywords(trackFields(track), GENRE_KEYWORDS[genre]);
 }
 
 export function filterTrendingByGenre(
@@ -49,6 +51,13 @@ export function filterTrendingByGenre(
   genre: GenreFilter
 ): TrendingTrack[] {
   if (genre === "All") return tracks;
+
+  console.log(
+    "[Trending genre filter]",
+    genre,
+    tracks.map((t) => ({ artist: t.artist, track: t.track, blurb: t.blurb }))
+  );
+
   const filtered = tracks.filter((t) => matchesGenre(t, genre));
   return filtered.length > 0 ? filtered : tracks;
 }

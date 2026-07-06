@@ -43,8 +43,12 @@ export default function TrendingCard({
         {track.album_image ? (
           <img
             src={track.album_image}
-            alt={`${track.track} cover`}
+            referrerPolicy="no-referrer"
+            alt={track.track}
             className="aspect-square w-full rounded object-cover"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
           />
         ) : (
           <div className="flex aspect-square w-full items-center justify-center rounded bg-spotify-border text-4xl text-spotify-muted">
