@@ -1,6 +1,3 @@
-"use client";
-
-import { useState } from "react";
 import ActionButtons from "./ActionButtons";
 import type { Recommendation, TrendingTrack } from "@/lib/api";
 
@@ -25,10 +22,6 @@ export default function TrendingCard({
   isLiked = false,
   highlighted = false,
 }: TrendingCardProps) {
-  const [imageError, setImageError] = useState(false);
-  const showPlaceholder = !track.album_image || imageError;
-  const artistInitial = track.artist?.trim().charAt(0).toUpperCase() || "?";
-
   const rec: Recommendation = {
     artist: track.artist,
     track: track.track,
@@ -47,18 +40,16 @@ export default function TrendingCard({
       }`}
     >
       <div className="relative mb-3">
-        {showPlaceholder ? (
-          <div className="flex aspect-square w-full items-center justify-center rounded bg-spotify-green text-4xl font-bold text-black">
-            {artistInitial}
-          </div>
-        ) : (
+        {track.album_image ? (
           <img
             src={track.album_image}
             alt={`${track.track} cover`}
             className="aspect-square w-full rounded object-cover"
-            referrerPolicy="no-referrer"
-            onError={() => setImageError(true)}
           />
+        ) : (
+          <div className="flex aspect-square w-full items-center justify-center rounded bg-spotify-border text-4xl text-spotify-muted">
+            ♪
+          </div>
         )}
         <span className="absolute right-2 top-2 rounded-full bg-[#e85d04] px-2 py-0.5 text-base font-bold text-white">
           🔥 Trending on Reels

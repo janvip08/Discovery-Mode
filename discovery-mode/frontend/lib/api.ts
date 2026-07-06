@@ -72,15 +72,7 @@ export async function fetchTrending(signal?: AbortSignal): Promise<TrendingTrack
   const res = await fetch(`${API_URL}/trending`, { signal });
   if (!res.ok) throw new Error("API error");
   const data = await res.json();
-  return (data.tracks ?? []).map((track: Record<string, unknown>): TrendingTrack => ({
-    artist: String(track.artist ?? ""),
-    track: String(track.track ?? ""),
-    spotify_url: (track.spotify_url as string | null) ?? null,
-    preview_url: (track.preview_url as string | null) ?? null,
-    album_image: typeof track.album_image === "string" ? track.album_image : null,
-    track_id: (track.track_id as string | null) ?? null,
-    blurb: String(track.blurb ?? ""),
-  }));
+  return data.tracks;
 }
 
 export interface ArtistTrack {
