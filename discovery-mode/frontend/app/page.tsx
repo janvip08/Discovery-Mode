@@ -54,7 +54,8 @@ function trendingKey(track: TrendingTrack): string {
   return track.track_id ?? `${track.artist}::${track.track}`;
 }
 
-const TRENDING_FETCH_TIMEOUT_MS = 10_000;
+const TRENDING_FETCH_TIMEOUT_MS = 45_000;
+const TRENDING_MAX_RETRIES = 2;
 
 function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
   const { showToast } = useToast();
@@ -85,7 +86,7 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
   const [trendingTracks, setTrendingTracks] = useState<TrendingTrack[]>([]);
   const [trendingLoaded, setTrendingLoaded] = useState(false);
   const [trendingLoading, setTrendingLoading] = useState(false);
-  const [trendingTimedOut, setTrendingTimedOut] = useState(false);
+  const [trendingError, setTrendingError] = useState<string | null>(null);
   const [trendingSearch, setTrendingSearch] = useState("");
   const [genreFilter, setGenreFilter] = useState<GenreFilter>("All");
 
@@ -142,41 +143,56 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
       if (cached?.length) {
         setTrendingTracks(cached);
         setTrendingLoaded(true);
-        setTrendingTimedOut(false);
+        setTrendingError(null);
         return;
       }
     }
 
     setTrendingLoading(true);
-    setTrendingTimedOut(false);
+    setTrendingError(null);
     setError(null);
 
-    let timedOut = false;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      timedOut = true;
-      controller.abort();
-      setTrendingTimedOut(true);
-      setTrendingLoading(false);
-    }, TRENDING_FETCH_TIMEOUT_MS);
+    let lastError: string | null = null;
 
-    try {
-      const tracks = await fetchTrending(controller.signal);
-      clearTimeout(timeoutId);
-      if (timedOut) return;
-      setTrendingTracks(tracks);
-      setTrendingLoaded(true);
-      setTrendingTimedOut(false);
-      setTrendingCache(tracks);
-    } catch {
-      clearTimeout(timeoutId);
-      if (!timedOut && !getTrendingCache()) {
-        setError("Something went wrong — please try again");
-      }
-    } finally {
-      if (!timedOut) {
+    for (let attempt = 0; attempt <= TRENDING_MAX_RETRIES; attempt++) {
+      let timedOut = false;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+      }, TRENDING_FETCH_TIMEOUT_MS);
+
+      try {
+        const tracks = await fetchTrending(controller.signal);
+        clearTimeout(timeoutId);
+        if (timedOut) {
+          lastError = "timeout";
+          continue;
+        }
+        if (!tracks.length) {
+          lastError = "empty";
+          continue;
+        }
+        setTrendingTracks(tracks);
+        setTrendingLoaded(true);
+        setTrendingError(null);
+        setTrendingCache(tracks);
         setTrendingLoading(false);
+        return;
+      } catch {
+        clearTimeout(timeoutId);
+        lastError = timedOut ? "timeout" : "fetch";
+        if (attempt < TRENDING_MAX_RETRIES) {
+          await new Promise((resolve) => setTimeout(resolve, 1500 * (attempt + 1)));
+        }
       }
+    }
+
+    setTrendingLoading(false);
+    if (lastError === "timeout") {
+      setTrendingError("Trending tracks are loading — try refreshing in a moment");
+    } else {
+      setTrendingError("Couldn't load trending tracks — tap Refresh to try again");
     }
   }, []);
 
@@ -554,10 +570,8 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
 
             {showTrendingSkeleton && <TrendingCardSkeleton count={6} />}
 
-            {trendingTimedOut && trendingTracks.length === 0 && (
-              <p className="mt-8 text-lg text-spotify-muted">
-                Trending tracks are loading — try refreshing in a moment
-              </p>
+            {trendingError && trendingTracks.length === 0 && !showTrendingSkeleton && (
+              <p className="mt-8 text-lg text-spotify-muted">{trendingError}</p>
             )}
 
             {searchFilteredTrending.length > 0 && (
