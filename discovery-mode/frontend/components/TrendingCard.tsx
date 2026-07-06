@@ -56,6 +56,7 @@ export default function TrendingCard({
             src={track.album_image}
             alt={`${track.track} cover`}
             className="aspect-square w-full rounded object-cover"
+            referrerPolicy="no-referrer"
             onError={() => setImageError(true)}
           />
         )}
