@@ -1,7 +1,11 @@
-export default function TrendingCardSkeleton() {
+interface TrendingCardSkeletonProps {
+  count?: number;
+}
+
+export default function TrendingCardSkeleton({ count = 6 }: TrendingCardSkeletonProps) {
   return (
     <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {[1, 2, 3].map((i) => (
+      {Array.from({ length: count }, (_, i) => (
         <div
           key={i}
           className="flex flex-col rounded-lg border border-spotify-border bg-spotify-panel p-4"

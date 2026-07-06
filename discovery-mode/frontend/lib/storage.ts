@@ -1,4 +1,4 @@
-import type { Recommendation } from "./api";
+import type { Recommendation, TrendingTrack } from "./api";
 import type { Tab } from "./types";
 
 const MOOD_HISTORY_KEY = "discovery-mode-mood-history";
@@ -6,7 +6,14 @@ const FAVOURITES_KEY = "discovery-mode-favourites";
 const LIKED_SONGS_KEY = "likedSongs";
 const HAS_VISITED_KEY = "hasVisited";
 const VISITED_TABS_KEY = "visitedTabs";
+const TRENDING_CACHE_KEY = "discovery-mode-trending-cache";
+const TRENDING_CACHE_TTL_MS = 60 * 60 * 1000;
 const MAX_MOOD_HISTORY = 3;
+
+interface TrendingCacheEntry {
+  tracks: TrendingTrack[];
+  cachedAt: number;
+}
 
 export function songKey(rec: Recommendation): string {
   return rec.track_id ?? `${rec.artist}::${rec.track}`;
@@ -119,4 +126,26 @@ export function addLikedSong(rec: Recommendation): Recommendation[] {
   const updated = [rec, ...liked];
   localStorage.setItem(LIKED_SONGS_KEY, JSON.stringify(updated));
   return updated;
+}
+
+export function getTrendingCache(): TrendingTrack[] | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(TRENDING_CACHE_KEY);
+    if (!raw) return null;
+    const { tracks, cachedAt } = JSON.parse(raw) as TrendingCacheEntry;
+    if (Date.now() - cachedAt > TRENDING_CACHE_TTL_MS) {
+      localStorage.removeItem(TRENDING_CACHE_KEY);
+      return null;
+    }
+    return tracks;
+  } catch {
+    return null;
+  }
+}
+
+export function setTrendingCache(tracks: TrendingTrack[]): void {
+  if (typeof window === "undefined") return;
+  const entry: TrendingCacheEntry = { tracks, cachedAt: Date.now() };
+  localStorage.setItem(TRENDING_CACHE_KEY, JSON.stringify(entry));
 }

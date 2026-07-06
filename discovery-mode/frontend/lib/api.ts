@@ -68,8 +68,8 @@ export async function fetchDeepRecommendations(body: {
   return data.recommendations;
 }
 
-export async function fetchTrending(): Promise<TrendingTrack[]> {
-  const res = await fetch(`${API_URL}/trending`);
+export async function fetchTrending(signal?: AbortSignal): Promise<TrendingTrack[]> {
+  const res = await fetch(`${API_URL}/trending`, { signal });
   if (!res.ok) throw new Error("API error");
   const data = await res.json();
   return data.tracks;

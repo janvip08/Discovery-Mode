@@ -33,10 +33,12 @@ import {
   getFavourites,
   getLikedSongs,
   getMoodHistory,
+  getTrendingCache,
   getVisitedTabs,
   hasVisited,
   markTabVisited,
   markVisited,
+  setTrendingCache,
   songKey,
 } from "@/lib/storage";
 import { filterTrendingByGenre, type GenreFilter } from "@/lib/trendingGenres";
@@ -51,6 +53,8 @@ function reorderToTop<T>(items: T[], target: T, keyFn: (item: T) => string): T[]
 function trendingKey(track: TrendingTrack): string {
   return track.track_id ?? `${track.artist}::${track.track}`;
 }
+
+const TRENDING_FETCH_TIMEOUT_MS = 10_000;
 
 function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
   const { showToast } = useToast();
@@ -81,6 +85,7 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
   const [trendingTracks, setTrendingTracks] = useState<TrendingTrack[]>([]);
   const [trendingLoaded, setTrendingLoaded] = useState(false);
   const [trendingLoading, setTrendingLoading] = useState(false);
+  const [trendingTimedOut, setTrendingTimedOut] = useState(false);
   const [trendingSearch, setTrendingSearch] = useState("");
   const [genreFilter, setGenreFilter] = useState<GenreFilter>("All");
 
@@ -131,19 +136,59 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
     []
   );
 
-  const loadTrending = useCallback(async () => {
+  const loadTrending = useCallback(async (forceRefresh = false) => {
+    if (!forceRefresh) {
+      const cached = getTrendingCache();
+      if (cached?.length) {
+        setTrendingTracks(cached);
+        setTrendingLoaded(true);
+        setTrendingTimedOut(false);
+        return;
+      }
+    }
+
     setTrendingLoading(true);
+    setTrendingTimedOut(false);
     setError(null);
+
+    let timedOut = false;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+      setTrendingTimedOut(true);
+      setTrendingLoading(false);
+    }, TRENDING_FETCH_TIMEOUT_MS);
+
     try {
-      const tracks = await fetchTrending();
+      const tracks = await fetchTrending(controller.signal);
+      clearTimeout(timeoutId);
+      if (timedOut) return;
       setTrendingTracks(tracks);
       setTrendingLoaded(true);
+      setTrendingTimedOut(false);
+      setTrendingCache(tracks);
     } catch {
-      setError("Something went wrong — please try again");
+      clearTimeout(timeoutId);
+      if (!timedOut && !getTrendingCache()) {
+        setError("Something went wrong — please try again");
+      }
     } finally {
-      setTrendingLoading(false);
+      if (!timedOut) {
+        setTrendingLoading(false);
+      }
     }
   }, []);
+
+  useEffect(() => {
+    const cached = getTrendingCache();
+    if (cached?.length) {
+      setTrendingTracks(cached);
+      setTrendingLoaded(true);
+      return;
+    }
+    loadTrending();
+  }, [loadTrending]);
 
   useEffect(() => {
     if (activeTab === "trending" && !trendingLoaded && !trendingLoading) {
@@ -278,6 +323,8 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
     : filteredTrending;
   const showQuickEmpty =
     activeTab === "quick" && !quickMood && quickResults.length === 0 && !loading;
+  const showTrendingSkeleton =
+    activeTab === "trending" && trendingLoading && trendingTracks.length === 0;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -487,8 +534,9 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
               </div>
               <button
                 type="button"
-                onClick={loadTrending}
-                className="shrink-0 rounded-full border border-spotify-green px-4 py-2 text-lg font-medium text-spotify-green hover:bg-spotify-green hover:text-black"
+                onClick={() => loadTrending(true)}
+                disabled={trendingLoading}
+                className="shrink-0 rounded-full border border-spotify-green px-4 py-2 text-lg font-medium text-spotify-green hover:bg-spotify-green hover:text-black disabled:opacity-50"
               >
                 Refresh
               </button>
@@ -504,9 +552,15 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
               className="mt-6 w-full rounded-lg px-4 py-3 text-lg"
             />
 
-            {trendingLoading && trendingTracks.length === 0 && <TrendingCardSkeleton />}
+            {showTrendingSkeleton && <TrendingCardSkeleton count={6} />}
 
-            {!trendingLoading && searchFilteredTrending.length > 0 && (
+            {trendingTimedOut && trendingTracks.length === 0 && (
+              <p className="mt-8 text-lg text-spotify-muted">
+                Trending tracks are loading — try refreshing in a moment
+              </p>
+            )}
+
+            {searchFilteredTrending.length > 0 && (
               <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {searchFilteredTrending.map((track, i) => (
                   <TrendingCard
