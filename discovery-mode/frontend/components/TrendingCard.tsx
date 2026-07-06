@@ -26,8 +26,7 @@ export default function TrendingCard({
   highlighted = false,
 }: TrendingCardProps) {
   const [imageError, setImageError] = useState(false);
-  const albumImage = track.album_image?.trim() || null;
-  const showPlaceholder = !albumImage || imageError;
+  const showPlaceholder = !track.album_image || imageError;
   const artistInitial = track.artist?.trim().charAt(0).toUpperCase() || "?";
 
   const rec: Recommendation = {
@@ -54,10 +53,9 @@ export default function TrendingCard({
           </div>
         ) : (
           <img
-            src={albumImage}
+            src={track.album_image}
             alt={`${track.track} cover`}
             className="aspect-square w-full rounded object-cover"
-            crossOrigin="anonymous"
             onError={() => setImageError(true)}
           />
         )}
