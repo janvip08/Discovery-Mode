@@ -7,7 +7,7 @@ const LIKED_SONGS_KEY = "likedSongs";
 const HAS_VISITED_KEY = "hasVisited";
 const VISITED_TABS_KEY = "visitedTabs";
 const TRENDING_CACHE_KEY = "discovery-mode-trending-cache";
-const TRENDING_CACHE_TTL_MS = 60 * 60 * 1000;
+const TRENDING_CACHE_TTL_MS = 2 * 60 * 60 * 1000;
 const MAX_MOOD_HISTORY = 3;
 
 interface TrendingCacheEntry {
@@ -128,20 +128,30 @@ export function addLikedSong(rec: Recommendation): Recommendation[] {
   return updated;
 }
 
-export function getTrendingCache(): TrendingTrack[] | null {
+function readTrendingCacheEntry(): TrendingCacheEntry | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(TRENDING_CACHE_KEY);
     if (!raw) return null;
-    const { tracks, cachedAt } = JSON.parse(raw) as TrendingCacheEntry;
-    if (Date.now() - cachedAt > TRENDING_CACHE_TTL_MS) {
-      localStorage.removeItem(TRENDING_CACHE_KEY);
-      return null;
-    }
-    return tracks;
+    return JSON.parse(raw) as TrendingCacheEntry;
   } catch {
     return null;
   }
+}
+
+export function getTrendingCache(): TrendingTrack[] | null {
+  const entry = readTrendingCacheEntry();
+  if (!entry?.tracks?.length) return null;
+  if (Date.now() - entry.cachedAt > TRENDING_CACHE_TTL_MS) {
+    localStorage.removeItem(TRENDING_CACHE_KEY);
+    return null;
+  }
+  return entry.tracks;
+}
+
+export function getTrendingCacheStale(): TrendingTrack[] | null {
+  const entry = readTrendingCacheEntry();
+  return entry?.tracks?.length ? entry.tracks : null;
 }
 
 export function setTrendingCache(tracks: TrendingTrack[]): void {

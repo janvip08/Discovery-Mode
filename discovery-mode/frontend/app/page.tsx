@@ -34,6 +34,7 @@ import {
   getLikedSongs,
   getMoodHistory,
   getTrendingCache,
+  getTrendingCacheStale,
   getVisitedTabs,
   hasVisited,
   markTabVisited,
@@ -54,8 +55,7 @@ function trendingKey(track: TrendingTrack): string {
   return track.track_id ?? `${track.artist}::${track.track}`;
 }
 
-const TRENDING_FETCH_TIMEOUT_MS = 45_000;
-const TRENDING_MAX_RETRIES = 2;
+const TRENDING_FETCH_TIMEOUT_MS = 10_000;
 
 function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
   const { showToast } = useToast();
@@ -152,47 +152,29 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
     setTrendingError(null);
     setError(null);
 
-    let lastError: string | null = null;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), TRENDING_FETCH_TIMEOUT_MS);
 
-    for (let attempt = 0; attempt <= TRENDING_MAX_RETRIES; attempt++) {
-      let timedOut = false;
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        timedOut = true;
-        controller.abort();
-      }, TRENDING_FETCH_TIMEOUT_MS);
-
-      try {
-        const tracks = await fetchTrending(controller.signal);
-        clearTimeout(timeoutId);
-        if (timedOut) {
-          lastError = "timeout";
-          continue;
-        }
-        if (!tracks.length) {
-          lastError = "empty";
-          continue;
-        }
-        setTrendingTracks(tracks);
+    try {
+      const tracks = await fetchTrending(controller.signal);
+      clearTimeout(timeoutId);
+      if (!tracks.length) throw new Error("empty");
+      setTrendingTracks(tracks);
+      setTrendingLoaded(true);
+      setTrendingError(null);
+      setTrendingCache(tracks);
+    } catch {
+      clearTimeout(timeoutId);
+      const stale = getTrendingCacheStale();
+      if (stale?.length) {
+        setTrendingTracks(stale);
         setTrendingLoaded(true);
         setTrendingError(null);
-        setTrendingCache(tracks);
-        setTrendingLoading(false);
-        return;
-      } catch {
-        clearTimeout(timeoutId);
-        lastError = timedOut ? "timeout" : "fetch";
-        if (attempt < TRENDING_MAX_RETRIES) {
-          await new Promise((resolve) => setTimeout(resolve, 1500 * (attempt + 1)));
-        }
+      } else {
+        setTrendingError("Trending tracks loading — please wait a moment and refresh");
       }
-    }
-
-    setTrendingLoading(false);
-    if (lastError === "timeout") {
-      setTrendingError("Trending tracks are loading — try refreshing in a moment");
-    } else {
-      setTrendingError("Couldn't load trending tracks — tap Refresh to try again");
+    } finally {
+      setTrendingLoading(false);
     }
   }, []);
 
