@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
-
-const API_WARMUP_URL = "https://janvi08-discovery-mode-api.hf.space/health";
+import type { ReactNode } from "react";
 
 interface SpotifyHomeProps {
   onEnterDiscovery: () => void;
@@ -76,10 +74,6 @@ function NavIcon({
 }
 
 export default function SpotifyHome({ onEnterDiscovery }: SpotifyHomeProps) {
-  useEffect(() => {
-    fetch(API_WARMUP_URL).catch(() => {});
-  }, []);
-
   return (
     <div className="flex min-h-screen flex-col bg-black">
       <div className="border-b border-[#282828] bg-black px-4 py-1.5 text-center text-xs text-spotify-muted">

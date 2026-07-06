@@ -56,6 +56,9 @@ function trendingKey(track: TrendingTrack): string {
 }
 
 const TRENDING_FETCH_TIMEOUT_MS = 10_000;
+const TRENDING_MAX_RETRIES = 3;
+const TRENDING_RETRY_DELAY_MS = 5_000;
+const API_HEALTH_URL = "https://janvi08-discovery-mode-api.hf.space/health";
 
 function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
   const { showToast } = useToast();
@@ -152,29 +155,44 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
     setTrendingError(null);
     setError(null);
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), TRENDING_FETCH_TIMEOUT_MS);
+    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-    try {
-      const tracks = await fetchTrending(controller.signal);
-      clearTimeout(timeoutId);
-      if (!tracks.length) throw new Error("empty");
-      setTrendingTracks(tracks);
-      setTrendingLoaded(true);
-      setTrendingError(null);
-      setTrendingCache(tracks);
-    } catch {
-      clearTimeout(timeoutId);
-      const stale = getTrendingCacheStale();
-      if (stale?.length) {
-        setTrendingTracks(stale);
+    for (let attempt = 0; attempt <= TRENDING_MAX_RETRIES; attempt++) {
+      if (attempt > 0) {
+        setTrendingError("Waking up servers... retrying in 5 seconds");
+        await sleep(TRENDING_RETRY_DELAY_MS);
+      }
+
+      if (attempt > 0) {
+        setTrendingError("Our servers are waking up — trending tracks loading in a moment...");
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), TRENDING_FETCH_TIMEOUT_MS);
+
+      try {
+        const tracks = await fetchTrending(controller.signal);
+        clearTimeout(timeoutId);
+        if (!tracks.length) throw new Error("empty");
+        setTrendingTracks(tracks);
         setTrendingLoaded(true);
         setTrendingError(null);
-      } else {
-        setTrendingError("Trending tracks loading — please wait a moment and refresh");
+        setTrendingCache(tracks);
+        setTrendingLoading(false);
+        return;
+      } catch {
+        clearTimeout(timeoutId);
       }
-    } finally {
-      setTrendingLoading(false);
+    }
+
+    setTrendingLoading(false);
+    const stale = getTrendingCacheStale();
+    if (stale?.length) {
+      setTrendingTracks(stale);
+      setTrendingLoaded(true);
+      setTrendingError(null);
+    } else {
+      setTrendingError("Trending tracks unavailable right now — please refresh in 1 minute");
     }
   }, []);
 
@@ -552,7 +570,7 @@ function DiscoveryApp({ onBackToSpotify }: { onBackToSpotify: () => void }) {
 
             {showTrendingSkeleton && <TrendingCardSkeleton count={6} />}
 
-            {trendingError && trendingTracks.length === 0 && !showTrendingSkeleton && (
+            {trendingError && trendingTracks.length === 0 && (
               <p className="mt-8 text-lg text-spotify-muted">{trendingError}</p>
             )}
 
@@ -619,6 +637,10 @@ function AppShell() {
 }
 
 export default function Home() {
+  useEffect(() => {
+    fetch(API_HEALTH_URL).catch(() => {});
+  }, []);
+
   return (
     <ToastProvider>
       <AppShell />
